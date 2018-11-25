@@ -15,5 +15,5 @@ def box(rects, img):
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
     cv2.imwrite('detected.jpg', img);
 
-rects, img = detect("mh3.jpg")
+rects, img = detect("group.jpg")
 box(rects, img)
