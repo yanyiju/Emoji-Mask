@@ -2,8 +2,8 @@ import cv2
 
 def detect(path):
     img = cv2.imread(path)
-    cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt2.xml")
-    rects = cascade.detectMultiScale(img, 1.3, 4, cv2.CASCADE_SCALE_IMAGE, (20,20))
+    cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
+    rects = cascade.detectMultiScale(img, 1.1, 3, cv2.CASCADE_SCALE_IMAGE, (20,20))
 
     if len(rects) == 0:
         return [], img
@@ -15,5 +15,5 @@ def box(rects, img):
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
     cv2.imwrite('detected.jpg', img);
 
-rects, img = detect("friend1.jpg")
+rects, img = detect("mh2.jpg")
 box(rects, img)
