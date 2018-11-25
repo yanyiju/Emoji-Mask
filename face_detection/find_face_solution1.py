@@ -22,5 +22,5 @@ def box(rects, img, path):
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
     cv2.imwrite('detected_cluster.jpg', img)
 
-rects, img = detect("group.jpg")
-box(rects, img, "group.jpg")
+rects, img = detect("friend1.jpg")
+box(rects, img, "friend1.jpg")
