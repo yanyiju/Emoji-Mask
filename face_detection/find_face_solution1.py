@@ -1,4 +1,5 @@
 import cv2
+import matplotlib.pyplot as plt
 
 def detect(path):
     img = cv2.imread(path)
@@ -10,10 +11,16 @@ def detect(path):
     rects[:, 2:] += rects[:, :2]
     return rects, img
 
-def box(rects, img):
+def box(rects, img, path):
+    idx = 0
+    for x1, y1, x2, y2 in rects:
+        sub_img = img[y1 : y2, x1 : x2]
+        cv2.imwrite('detected_faces/' + path + '_' + str(idx) + '.jpg', sub_img)
+        cv2.imwrite('detected_faces/' + path + '_' + str(idx) + '.jpg', sub_img)
+        idx = idx + 1
     for x1, y1, x2, y2 in rects:
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
-    cv2.imwrite('detected.jpg', img);
+    cv2.imwrite('detected_cluster.jpg', img)
 
 rects, img = detect("group.jpg")
-box(rects, img)
+box(rects, img, "group.jpg")
