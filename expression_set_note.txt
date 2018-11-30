@@ -1,0 +1,13 @@
+0 = neutral
+1 = anger
+2 = contempt
+3 = disgust
+4 = fear 
+5 = happy
+6 = sadness
+7 = surprise
+
+来自The Extended Cohn-Kanade (CK+) database
+原包中绝大多数的照片都没有tag
+这里是我手动把有tag的剔出来重新标了号
+相对tag量 1 3 5 7居多 2 4 6极少 没有0(需要另补)
