@@ -71,7 +71,7 @@ for rect in rects:
     cv2.circle(image, (int(avg_right_x), int(avg_right_y)), 1, (128, 128, 128), -1)
 
     angle = np.arctan((avg_right_y - avg_left_y) / (avg_right_x - avg_left_x))
-    angle = angle / np.pi * 180
+    angle = - angle / np.pi * 180
     print(angle)
 
 cv2.imshow("Aligned", image)
