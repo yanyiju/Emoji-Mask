@@ -5,9 +5,6 @@ import cv2
 # from PIL import image
 
 def main():
-	# Read the example photo in COLOR mode
-	photo = cv2.imread('example.png',1)
-
 	# Set parameters
 	faces_info = []
 	faces_info.append([15,0.1,(500,500),1])
@@ -19,7 +16,8 @@ def main():
 	'''
 
     # Execute grafting
-	result = gf.graft_emoji(photo,faces_info)
+	photo_path = 'example.png'
+	result = gf.graft_emoji(photo_path,faces_info)
 
 	# Print out result
 	cv2.imwrite("sample_result.png",result)

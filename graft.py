@@ -7,23 +7,26 @@ import cv2
 # Folder of stored emoji png
 EMOJI_FILE_PATH = "emoji/"
 
-def graft_emoji(photo, faces):
+def graft_emoji(photo_path, faces):
 	'''
 	Graft the responding emoji onto the given photo based on face infomation 
 	including face orientation (degree), face radius (ratio), face center, emotion label
 	input:
-	photo - target photo 
+	photo - the path of target photo 
 	faces - information of faces in the photo 
 			list of list [orientation, radius, center, label]
 			(can be optimized into numpy matrix)
 	output:
 	result - the processed photo which labeled emojis have been added
 	'''
+	# load photo
+	photo = cv2.imread(photo_path,cv2.IMREAD_UNCHANGED)
 	height,width,rgb = photo.shape
+	# grafting process
 	result = photo
 	for face in faces:
-		emoji = cv2.imread(get_emoji_file(face[3]),1)
-		rows,cols,rgb =  emoji.shape
+		emoji = cv2.imread(get_emoji_file(face[3]),cv2.IMREAD_UNCHANGED)
+		rows,cols,rgba =  emoji.shape
 
 		# Transform the emoji
 		scale = face[1]*width/rows
@@ -37,7 +40,7 @@ def graft_emoji(photo, faces):
 		(px2,py2) = (int(px+size_x/2),int(py+size_y/2))
 		(ex1,ey1) = (int(rows/2-size_x/2),int(cols/2-size_y/2))
 		(ex2,ey2) = (int(rows/2+size_x/2),int(cols/2+size_y/2))
-		result[px1:px2,py1:py2] = emoji_trans[ex1:ex2,ey1:ey2]
+		result[px1:px2,py1:py2] = emoji_trans[ex1:ex2,ey1:ey2,0:3]
 
 	return result
 
