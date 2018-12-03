@@ -7,7 +7,7 @@ import cv2
 def main():
 	# Set parameters
 	faces_info = []
-	faces_info.append([15,0.1,(500,500),1])
+	faces_info.append([15,100,(500,500),1])
 	'''
 	face0_orientation = 15	# degree unit
 	face0_radius = 0.1
