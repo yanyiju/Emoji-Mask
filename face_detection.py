@@ -1,10 +1,19 @@
-import os
+import argparse
+import imutils
+import dlib
 import cv2
-import numpy
-from scipy import misc
+import os
+import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import facenet.src.align.detect_face as detect_face
+from imutils.face_utils import FaceAligner
+from imutils.face_utils import rect_to_bb
+from helpers import FACIAL_LANDMARKS_IDXS
+from helpers import shape_to_np
+from scipy import misc
+
+''' <find_face_solution1.py> '''
 
 # Custormized, load preset for detect_cv2
 CASCADE = "haarcascade_frontalface_alt1.xml"
@@ -17,33 +26,29 @@ def detect_cv2(path):
     # Face detection
     img = cv2.imread(path)
     faces = FACE_DETECTION.detectMultiScale(img, 1.1, 3, cv2.CASCADE_SCALE_IMAGE, (20,20))
-
     # No face detected
     if len(faces) == 0:
         return [], img
-
     faces[:, 2:] += faces[:, :2]
     return faces, img
 
-
-def box(rects, img, path):
+def box(faces, img, path):
     '''
     Mark detected faces and ranges
     '''
     # Get target file's base name
     base = os.path.splitext(os.path.basename(path))[0]
-
     # Add face boxes
     idx = 0
-    for x1, y1, x2, y2 in rects:
+    for x1, y1, x2, y2 in faces:
         sub_img = img[y1 : y2, x1 : x2]
         cv2.imwrite('detected_faces/' + base + '_' + str(idx) + '.jpg', sub_img)
         cv2.imwrite('detected_faces/' + base + '_' + str(idx) + '.jpg', sub_img)
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
         idx = idx + 1
+    # cv2.imwrite('detected_cluster.jpg', img)
 
-    cv2.imwrite('detected_cluster.jpg', img)
-
+''' <find_face_solution2.py> '''
 
 # Custormized, load preset for detect_mtcnn
 minsize = 20                                    # minimum size of face
@@ -84,5 +89,86 @@ def detect_mtcnn(path):
         
     plt.imshow(img)
     plt.show()
+
+''' <face_align.py> '''
+
+# initialize dlib's face detector (HOG-based) and then create
+# the facial landmark predictor and the face aligner
+DLIB_DETECTOR = dlib.get_frontal_face_detector()
+DLIB_PREDICTOR = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+
+def detect_dlib(path):
+    '''
+    Face detection using dlib face detector
+    INPUT:
+    path - the path of the photo ready for process
+    OUTPUT:
+    gray - the gray scaled image, needed by func get_face_center()
+    faces - the detected faces
+    '''
+    image = cv2.imread(path)
+    image = imutils.resize(image, width=800)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = DLIB_DETECTOR(gray, 2)
+    return gray,faces
+
+def get_face_info(gray,face):
+    '''
+    This function follows func detect_dlib()
+    Return the center pos/radius/2D orientation of the given face
+    INPUT:
+    gray - the gray scaled image used for prediction
+    face - the given face
+    OUTPUT:
+    center - the position/center of the face, set as the middle point between eyes
+    radius - the radius of the face range, unit in pixels
+    angle - the orientation of the face in 2D
+    '''
+    # extract the ROI of the *original* face, then align the face
+    # using facial landmarks
+    shape = DLIB_PREDICTOR(gray, face)
+    shape = shape_to_np(shape)
+
+    # extract the left and right eye (x, y)-coordinates
+    (lStart, lEnd) = FACIAL_LANDMARKS_IDXS["left_eye"]
+    (rStart, rEnd) = FACIAL_LANDMARKS_IDXS["right_eye"]
+    leftEyePts = shape[lStart:lEnd]
+    rightEyePts = shape[rStart:rEnd]
+
+    # Left eye
+    sum_x_left = 0
+    sum_y_left = 0
+    count = 0
+    for (x, y) in leftEyePts:
+        sum_x_left = sum_x_left + x
+        sum_y_left = sum_y_left + y
+        count = count + 1
+        # cv2.circle(gray,(x,y),1,(0,0,255),-1)
+    avg_x_left = sum_x_left/count
+    avg_y_left = sum_y_left/count
+    cv2.circle(gray,(int(avg_x_left),int(avg_y_left)),1,(128,128,128),-1)
+    
+    # Right eye
+    sum_x_right = 0
+    sum_y_right = 0
+    count = 0
+    for (x, y) in rightEyePts:
+        sum_x_right = sum_x_right + x
+        sum_y_right = sum_y_right + y
+        count = count + 1
+        # cv2.circle(gray, (x, y), 1, (255, 255, 0), -1)
+    avg_x_right = sum_x_right/count
+    avg_y_right = sum_y_right/count
+    cv2.circle(gray,(int(avg_x_right),int(avg_y_right)),1,(128,128,128),-1)
+
+    # Calulate center
+    center = (round((avg_x_left+avg_x_right)/2),round((avg_y_left+avg_y_right)/2))
+    # Calculate the radius
+    radius = (face.height()+face.width())/2.0
+    # Calculate the angle (2D orientation)
+    angle = np.arctan((avg_y_right-avg_y_left)/(avg_x_right-avg_x_left))
+    angle = -angle/np.pi*180
+
+    return center,radius,angle
 
 
