@@ -20,18 +20,19 @@ conda install tensorflow
 conda install matplotlib
 pip install opencv-contrib-python
 pip install facenet
+pip install dlib
 ~~~
 
 # Main Dependent package
 ## installed
 ~~~sh
-opencv numpy facenet tensorflow scipy matplotlib os
+opencv numpy facenet tensorflow scipy matplotlib os dlib
 ~~~
 
 # Expression Labels
 ~~~sh
 0 = neutral
-1 = anger
+1 = angry
 2 = contempt
 3 = disgust
 4 = fear 

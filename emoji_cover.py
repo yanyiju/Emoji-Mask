@@ -4,7 +4,7 @@ import os
 import cv2
 
 # Folder of stored emoji png
-EMOJI_FILE_PATH = "emoji/"
+EMOJI_FILE_PATH = "emoji_png/"
 
 def graft_emoji(photo_path, faces):
 	'''
@@ -89,7 +89,22 @@ def get_emoji_file(label):
 	OUTPUT:
 	filename - the corresponding emoji file name/path
 	'''
-	file = EMOJI_FILE_PATH+str(label)+".png"
+	if label is 0:
+		file = EMOJI_FILE_PATH+"neutral.png"
+	elif label is 1:
+		file = EMOJI_FILE_PATH+"angry.png"
+	elif label is 2:
+		file = EMOJI_FILE_PATH+"contempt.png"
+	elif label is 3:
+		file = EMOJI_FILE_PATH+"disgust.png"
+	elif label is 4:
+		file = EMOJI_FILE_PATH+"fear.png"
+	elif label is 5:
+		file = EMOJI_FILE_PATH+"happy.png"
+	elif label is 6:
+		file = EMOJI_FILE_PATH+"sad.png"
+	elif label is 7:
+		file = EMOJI_FILE_PATH+"surprise.png"
 	return file
 
 def check(img):
