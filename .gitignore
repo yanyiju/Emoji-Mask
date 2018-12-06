@@ -1,7 +1,6 @@
 face_detection/detected_faces
 face_detection/detected_cluster.jpg
 __pycache__/
-
-
-detected_cluster.jpg
 detected_faces/
+*.jpg
+*.png

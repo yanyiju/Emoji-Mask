@@ -12,6 +12,32 @@ from imutils.face_utils import rect_to_bb
 from helpers import FACIAL_LANDMARKS_IDXS
 from helpers import shape_to_np
 from scipy import misc
+from keras.models import load_model
+
+CROP_FACES_PATH = "crop_faces/"
+emotion_classifier = load_model('simple_CNN.530-0.65.hdf5')
+emotion_labels = {
+    0: 'angry',
+    1: 'disgust',
+    2: 'fear',
+    3: 'happy',
+    4: 'sad',
+    5: 'surprise',
+    6: 'neutral'
+}
+
+''' <emotion.py> '''
+
+def emotion_recognition(img):
+    '''take in already cut face img'''
+    gray_face = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray_face = cv2.resize(gray_face, (48, 48))
+    gray_face = gray_face / 255.0
+    gray_face = np.expand_dims(gray_face, 0)
+    gray_face = np.expand_dims(gray_face, -1)
+    emotion_label_arg = np.argmax(emotion_classifier.predict(gray_face))
+    # emotion = emotion_labels[emotion_label_arg]
+    return emotion_label_arg
 
 ''' <find_face_solution1.py> '''
 
@@ -32,7 +58,7 @@ def detect_cv2(path):
     faces[:, 2:] += faces[:, :2]
     return faces, img
 
-def box(faces, img, path):
+def box_cv2(faces, img, path):
     '''
     Mark detected faces and ranges
     '''
@@ -108,8 +134,15 @@ def detect_dlib(path):
     '''
     image = cv2.imread(path)
     image = imutils.resize(image, width=800)
+    cv2.imwrite('resize.png',image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = DLIB_DETECTOR(gray, 2)
+    count = 0
+    for face in faces:
+        # Save the cropped face
+        face_name = CROP_FACES_PATH+str(count)+'.jpg'
+        face_img = get_cropped_face(face,face_name,image)
+        count = count+1
     return gray,faces
 
 def get_face_info(gray,face):
@@ -120,9 +153,9 @@ def get_face_info(gray,face):
     gray - the gray scaled image used for prediction
     face - the given face
     OUTPUT:
-    center - the position/center of the face, set as the middle point between eyes
+    angle - the orientation of the face in 2D 
     radius - the radius of the face range, unit in pixels
-    angle - the orientation of the face in 2D
+    center - the position/center of the face, set as the middle point between eyes
     '''
     # extract the ROI of the *original* face, then align the face
     # using facial landmarks
@@ -161,14 +194,40 @@ def get_face_info(gray,face):
     avg_y_right = sum_y_right/count
     cv2.circle(gray,(int(avg_x_right),int(avg_y_right)),1,(128,128,128),-1)
 
-    # Calulate center
-    center = (round((avg_x_left+avg_x_right)/2),round((avg_y_left+avg_y_right)/2))
-    # Calculate the radius
-    radius = (face.height()+face.width())/2.0
     # Calculate the angle (2D orientation)
     angle = np.arctan((avg_y_right-avg_y_left)/(avg_x_right-avg_x_left))
-    angle = -angle/np.pi*180
+    angle = angle/np.pi*180
+    # Calculate the radius
+    radius = face.height()+face.width()
+    # Calulate center
+    center = (int((avg_x_left+avg_x_right)/2),int((avg_y_left+avg_y_right)/2))
 
-    return center,radius,angle
+    return angle,radius,center
 
+def get_cropped_face(face,face_name,img):
+    y1 = face.left()
+    y2 = face.right()
+    x1 = face.top()
+    x2 = face.bottom()
+    face_img = img[x1:x2,y1:y2]
+    face_img = cv2.resize(face_img,(96,96),interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(face_name,face_img)
+    return face_img
 
+def add_box_text(faces,labels,img):
+    '''
+    Mark detected faces and emotions
+    '''
+    img = imutils.resize(img, width=800)
+    idx = 0
+    for face in faces:
+        x1 = face.left()
+        x2 = face.right()
+        y1 = face.top()
+        y2 = face.bottom()
+        # Add face box
+        cv2.rectangle(img,(x1,y1),(x2,y2),(127, 255, 0),2)
+        # Add face emotion text
+        cv2.putText(img,emotion_labels[labels[idx]],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
+        idx = idx+1
+    cv2.imwrite('box_text.png', img)

@@ -21,12 +21,13 @@ conda install matplotlib
 pip install opencv-contrib-python
 pip install facenet
 pip install dlib
+pip install keras
 ~~~
 
 # Main Dependent package
 ## installed
 ~~~sh
-opencv numpy facenet tensorflow scipy matplotlib os dlib
+opencv numpy facenet tensorflow scipy matplotlib os dlib keras
 ~~~
 
 # Expression Labels
