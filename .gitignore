@@ -2,6 +2,6 @@ face_detection/detected_faces
 face_detection/detected_cluster.jpg
 __pycache__/
 
-
+*/.idea/
 detected_cluster.jpg
 detected_faces/
