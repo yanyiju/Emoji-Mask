@@ -42,7 +42,7 @@ def emotion_recognition(img):
 ''' <find_face_solution1.py> '''
 
 # Custormized, load preset for detect_cv2
-CASCADE = "haarcascade_frontalface_alt1.xml"
+CASCADE = "haarcascade_frontalface_alt.xml"
 FACE_DETECTION = cv2.CascadeClassifier(CASCADE)
 
 def detect_cv2(path):
@@ -72,7 +72,7 @@ def box_cv2(faces, img, path):
         cv2.imwrite('detected_faces/' + base + '_' + str(idx) + '.jpg', sub_img)
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
         idx = idx + 1
-    # cv2.imwrite('detected_cluster.jpg', img)
+    cv2.imwrite('detected_cluster.jpg', img)
 
 ''' <find_face_solution2.py> '''
 
@@ -230,4 +230,4 @@ def add_box_text(faces,labels,img):
         # Add face emotion text
         cv2.putText(img,emotion_labels[labels[idx]],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
         idx = idx+1
-    cv2.imwrite('box_text.png', img)
+    return img

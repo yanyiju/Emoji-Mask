@@ -6,13 +6,15 @@ import face_detection as FACE
 import emoji_cover as GRAFT
 
 def main():
-	img_path = "example.jpg"
+	img_path = "example2.jpg"
 	# Face detection process using cv2 package
-	# faces, img = FACE.detect_cv2(img_path)
-	# FACE.box(faces, img, img_path)
+	faces, img = FACE.detect_cv2(img_path)
+	FACE.box_cv2(faces, img, img_path)
 	# Face detection process using mtcnn package
 	# FACE.detect_mtcnn(img_path)
+	# Face detection process using dlib package
 	gray,faces = FACE.detect_dlib(img_path)
+	print(faces)
 	img = cv2.imread(img_path)
 
 	faces_info = []
@@ -32,7 +34,7 @@ def main():
 	result = GRAFT.graft_emoji(img_path,faces_info)
 	result_note = FACE.add_box_text(faces,labels,img)
 	cv2.imwrite('result.png',result)
-	cv2.imwrite('result_not.png',result)
+	cv2.imwrite('result_note.png',result_note)
 
 
 if(__name__=="__main__"):
