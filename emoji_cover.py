@@ -39,7 +39,7 @@ def graft_emoji(photo_path, faces):
 		rows,cols,rgba = emoji.shape
 		''' Get parameters for transforming '''
 		angle = face[0]
-		scale = face[1]/rows
+		scale = 1.25*face[1]/rows
 		''' Transform the emoji '''
 		emoji_trans = rotate_img(emoji,angle)
 		emoji_trans = scale_img(emoji_trans,scale)

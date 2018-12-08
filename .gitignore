@@ -3,3 +3,4 @@ face_detection/detected_cluster.jpg
 __pycache__/
 detected_faces/
 *.png
+crop_faces/*.jpg

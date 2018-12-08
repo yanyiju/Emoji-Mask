@@ -137,11 +137,12 @@ def detect_dlib(path):
     cv2.imwrite('resize.png',image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = DLIB_DETECTOR(gray, 2)
+    print(faces)
     count = 0
     for face in faces:
         # Save the cropped face
         face_name = CROP_FACES_PATH+str(count)+'.jpg'
-        face_img = get_cropped_face(face,face_name,image)
+        get_cropped_face(face,face_name,image)
         count = count+1
     return gray,faces
 
@@ -198,21 +199,24 @@ def get_face_info(gray,face):
     angle = np.arctan((avg_y_right-avg_y_left)/(avg_x_right-avg_x_left))
     angle = angle/np.pi*180
     # Calculate the radius
-    radius = face.height()+face.width()
+    width = (face.height()+face.width())/2.0
     # Calulate center
     center = (int((avg_x_left+avg_x_right)/2),int((avg_y_left+avg_y_right)/2))
 
-    return angle,radius,center
+    return angle,width,center
 
 def get_cropped_face(face,face_name,img):
     y1 = face.left()
     y2 = face.right()
     x1 = face.top()
     x2 = face.bottom()
+    if y1 < 0:
+        y1 = 0
+    print(x1,x2,y1,y2)
     face_img = img[x1:x2,y1:y2]
+    plt.imshow(face_img)
     face_img = cv2.resize(face_img,(96,96),interpolation=cv2.INTER_CUBIC)
     cv2.imwrite(face_name,face_img)
-    return face_img
 
 def add_box_text(faces,labels,img):
     '''

@@ -6,10 +6,10 @@ import face_detection as FACE
 import emoji_cover as GRAFT
 
 def main():
-	img_path = "example2.jpg"
+	img_path = "example3.jpg"
 	# Face detection process using cv2 package
-	faces, img = FACE.detect_cv2(img_path)
-	FACE.box_cv2(faces, img, img_path)
+	# faces, img = FACE.detect_cv2(img_path)
+	# FACE.box_cv2(faces, img, img_path)
 	# Face detection process using mtcnn package
 	# FACE.detect_mtcnn(img_path)
 	# Face detection process using dlib package
