@@ -21,11 +21,16 @@ def main(K,threshold):
 
 	# Step2 - get cropped faces from all photos
 	# To simplify, here just take one photo
+	faces_num = 0
+	faces_id = {}
 	faces_set = {}
 	faces_parent = []
 	for photo_path in glob.glob(ALBUM_PATH+'*.jpg'):
 		photo_name = os.path.splitext(os.path.basename(photo_path))[0]
 		gray,faces = FACE.detect_dlib(photo_path,photo_name)
+		for face in faces:
+			faces_id[face] = face_num
+			face_num =  face_num+1
 		face_parent = face_parent+[photo_name]*len(faces)
 		faces_set[photo_name] = faces
 
@@ -40,12 +45,12 @@ def main(K,threshold):
 		photo_name = os.path.splitext(os.path.basename(photo_path))[0]
 		img = cv2.imread(photo_path)
 		faces = faces_set[photo_name]
-		faces_info = get_faces_info(faces,face_map[photo_name])
+		faces_info = get_faces_info(faces,face_map[photo_name],faces_id)
 		result = GRAFT.graft_emoji(img_path,faces_info)
 		plt.imshow(result)
 		plt.show()
 
-def get_faces_info(faces,face_map):
+def get_faces_info(faces,face_map,faces_id):
 	'''
 	Get the face_info of those special faces
 	'''
@@ -53,7 +58,7 @@ def get_faces_info(faces,face_map):
 	labels = []
 	count = 0
 	for face in faces:
-		if face_map[count] == 0:
+		if faces_id[face] not in face_map:
 			continue
 		face_info = []
 		face_info[0:2] = (FACE.get_face_info(gray,face))

@@ -88,7 +88,7 @@ def get_faces_from_same_person(sample,dist_mat,threshold,face_parent):
 	threshold - if distance < threshold, same person
 	face_parent - recording which photo the faces are in
 	OUTPUT:
-	face_map - an array of face number for same person
+	face_map - an set of face number for same person
 	'''
 	face_map = {}
 	n = dist_mat.shape[0]
