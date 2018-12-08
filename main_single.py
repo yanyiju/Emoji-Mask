@@ -13,7 +13,7 @@ def main():
 	# Face detection process using mtcnn package
 	# FACE.detect_mtcnn(img_path)
 	# Face detection process using dlib package
-	gray,faces = FACE.detect_dlib(img_path)
+	gray,faces = FACE.detect_dlib(img_path,'')
 	print(faces)
 	img = cv2.imread(img_path)
 

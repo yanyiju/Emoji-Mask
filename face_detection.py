@@ -1,3 +1,9 @@
+############################################################
+##  
+##  Private package 
+##  Function: Detecting faces and emotions
+##
+############################################################
 import argparse
 import imutils
 import dlib
@@ -26,7 +32,7 @@ emotion_labels = {
     6: 'neutral'
 }
 
-''' <emotion.py> '''
+''' emotion detection related '''
 
 def emotion_recognition(img):
     '''take in already cut face img'''
@@ -39,7 +45,7 @@ def emotion_recognition(img):
     # emotion = emotion_labels[emotion_label_arg]
     return emotion_label_arg
 
-''' <find_face_solution1.py> '''
+''' find_face_solution 1 '''
 
 # Custormized, load preset for detect_cv2
 CASCADE = "haarcascade_frontalface_alt.xml"
@@ -74,7 +80,7 @@ def box_cv2(faces, img, path):
         idx = idx + 1
     cv2.imwrite('detected_cluster.jpg', img)
 
-''' <find_face_solution2.py> '''
+''' find_face_solution 2 '''
 
 # Custormized, load preset for detect_mtcnn
 minsize = 20                                    # minimum size of face
@@ -116,14 +122,14 @@ def detect_mtcnn(path):
     plt.imshow(img)
     plt.show()
 
-''' <face_align.py> '''
+''' find_face_solution 3 '''
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor and the face aligner
 DLIB_DETECTOR = dlib.get_frontal_face_detector()
 DLIB_PREDICTOR = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
-def detect_dlib(path):
+def detect_dlib(path,name):
     '''
     Face detection using dlib face detector
     INPUT:
@@ -141,7 +147,7 @@ def detect_dlib(path):
     count = 0
     for face in faces:
         # Save the cropped face
-        face_name = CROP_FACES_PATH+str(count)+'.jpg'
+        face_name = CROP_FACES_PATH+name+'/'+str(count)+'.jpg'
         get_cropped_face(face,face_name,image)
         count = count+1
     return gray,faces
@@ -206,12 +212,10 @@ def get_face_info(gray,face):
     return angle,width,center
 
 def get_cropped_face(face,face_name,img):
-    y1 = face.left()
-    y2 = face.right()
-    x1 = face.top()
-    x2 = face.bottom()
-    if y1 < 0:
-        y1 = 0
+    '''
+    Get and save the cropped face.
+    '''
+    y1,y2,x1,x2 = get_face_range(face)
     print(x1,x2,y1,y2)
     face_img = img[x1:x2,y1:y2]
     plt.imshow(face_img)
@@ -225,13 +229,28 @@ def add_box_text(faces,labels,img):
     img = imutils.resize(img, width=800)
     idx = 0
     for face in faces:
-        x1 = face.left()
-        x2 = face.right()
-        y1 = face.top()
-        y2 = face.bottom()
+        x1,x2,y1,y2 = get_face_range(face)
         # Add face box
         cv2.rectangle(img,(x1,y1),(x2,y2),(127, 255, 0),2)
         # Add face emotion text
         cv2.putText(img,emotion_labels[labels[idx]],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
         idx = idx+1
     return img
+
+def get_face_range(face):
+    '''
+    Get the face range from dlib.rectangle object
+    '''
+    l = face.left()
+    r = face.right()
+    t = face.top()
+    b = face.bottom()
+    if l < 0:
+        l = 0
+    if r < 0:
+        r = 0
+    if t < 0:
+        t = 0
+    if b < 0:
+        b = 0     
+    return l,r,t,b
