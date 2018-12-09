@@ -1,5 +1,6 @@
 # Public packages
 import cv2
+import matplotlib.pyplot as plt
 
 # Private packages
 import face_detection as FACE
@@ -7,11 +8,14 @@ import emoji_cover as GRAFT
 
 def main():
 	img_path = "example3.jpg"
+
 	# Face detection process using cv2 package
 	# faces, img = FACE.detect_cv2(img_path)
 	# FACE.box_cv2(faces, img, img_path)
+
 	# Face detection process using mtcnn package
 	# FACE.detect_mtcnn(img_path)
+
 	# Face detection process using dlib package
 	gray,faces = FACE.detect_dlib(img_path,'')
 	print(faces)
@@ -35,6 +39,10 @@ def main():
 	result_note = FACE.add_box_text(faces,labels,img)
 	cv2.imwrite('result.png',result)
 	cv2.imwrite('result_note.png',result_note)
+	plt.imshow(result)
+	plt.show()
+	plt.imshow(result_note)
+	plt.show()
 
 
 if(__name__=="__main__"):

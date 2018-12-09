@@ -28,18 +28,6 @@ FACIAL_LANDMARKS_5_IDXS = OrderedDict([
 # 68-point model
 FACIAL_LANDMARKS_IDXS = FACIAL_LANDMARKS_68_IDXS
 
-def rect_to_bb(rect):
-	# take a bounding predicted by dlib and convert it
-	# to the format (x, y, w, h) as we would normally do
-	# with OpenCV
-	x = rect.left()
-	y = rect.top()
-	w = rect.right() - x
-	h = rect.bottom() - y
-
-	# return a tuple of (x, y, w, h)
-	return (x, y, w, h)
-
 def shape_to_np(shape, dtype="int"):
 	# initialize the list of (x, y)-coordinates
 	coords = np.zeros((shape.num_parts, 2), dtype=dtype)

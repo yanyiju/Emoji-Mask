@@ -9,6 +9,7 @@ import imutils
 import dlib
 import cv2
 import os
+import math
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -147,7 +148,7 @@ def detect_dlib(path,name):
     count = 0
     for face in faces:
         # Save the cropped face
-        face_name = CROP_FACES_PATH+name+'/'+str(count)+'.jpg'
+        face_name = CROP_FACES_PATH+name+str(count)+'.jpg'
         get_cropped_face(face,face_name,image)
         count = count+1
     return gray,faces
@@ -169,36 +170,12 @@ def get_face_info(gray,face):
     shape = DLIB_PREDICTOR(gray, face)
     shape = shape_to_np(shape)
 
-    # extract the left and right eye (x, y)-coordinates
-    (lStart, lEnd) = FACIAL_LANDMARKS_IDXS["left_eye"]
-    (rStart, rEnd) = FACIAL_LANDMARKS_IDXS["right_eye"]
-    leftEyePts = shape[lStart:lEnd]
-    rightEyePts = shape[rStart:rEnd]
-
     # Left eye
-    sum_x_left = 0
-    sum_y_left = 0
-    count = 0
-    for (x, y) in leftEyePts:
-        sum_x_left = sum_x_left + x
-        sum_y_left = sum_y_left + y
-        count = count + 1
-        # cv2.circle(gray,(x,y),1,(0,0,255),-1)
-    avg_x_left = sum_x_left/count
-    avg_y_left = sum_y_left/count
+    avg_x_left,avg_y_left = get_feature_pos("left_eye",shape)
     cv2.circle(gray,(int(avg_x_left),int(avg_y_left)),1,(128,128,128),-1)
-    
+
     # Right eye
-    sum_x_right = 0
-    sum_y_right = 0
-    count = 0
-    for (x, y) in rightEyePts:
-        sum_x_right = sum_x_right + x
-        sum_y_right = sum_y_right + y
-        count = count + 1
-        # cv2.circle(gray, (x, y), 1, (255, 255, 0), -1)
-    avg_x_right = sum_x_right/count
-    avg_y_right = sum_y_right/count
+    avg_x_right,avg_y_right = get_feature_pos("right_eye",shape)
     cv2.circle(gray,(int(avg_x_right),int(avg_y_right)),1,(128,128,128),-1)
 
     # Calculate the angle (2D orientation)
@@ -211,10 +188,91 @@ def get_face_info(gray,face):
 
     return angle,width,center
 
+
+def get_face_features(gray,face):
+    '''
+    Used to judge if two faces are the same person
+    INPUT:
+    gray - the gray scaled image used for prediction
+    face - the given face
+    OUTPUT:
+    features - a vector recording the distances between face features
+    Here I take the person's nose as the reference point, thus in the 
+    following expression dist[<feature>] means the distance between 
+    his/her nose and the feature point.
+
+    The order of features np array:
+        [dist["mouth"], dist["right_eyebrow"], dist["left_eyebrow"], 
+            dist["right_eye"], dist["left_eye"], dist["jaw"]]
+    '''
+    shape = DLIB_PREDICTOR(gray, face)
+    shape = shape_to_np(shape)
+
+    positions = []
+    nose = get_feature_pos("nose",shape)
+    positions.append(get_feature_pos("mouth",shape))
+    positions.append(get_feature_pos("right_eyebrow",shape))
+    positions.append(get_feature_pos("left_eyebrow",shape))
+    positions.append(get_feature_pos("right_eye",shape))
+    positions.append(get_feature_pos("left_eye",shape))
+    positions.append(get_feature_pos("jaw",shape))
+
+    # Get the vector
+    features = np.zeros((1,6))
+    for i in range(6):
+        features[0,i] = get_distance(nose,positions[i])
+    # Normalize
+    features = features/np.sqrt(np.sum(features**2))
+    
+    return features
+
+
+def get_feature_pos(feature,shape):
+    '''
+    Get the average value/pos of the points for the feature
+    INPUT:
+    feature - a string naming the feature, like "mouth"
+    shape - a numpy array including all points
+    OUTPUT:
+    position - the position of the feature
+    '''
+    (start, end) = FACIAL_LANDMARKS_IDXS[feature]
+    point_set = shape[start:end]
+
+    # get the geometry center/average pos value
+    sum_x = 0
+    sum_y = 0
+    for (x, y) in point_set:
+        sum_x = sum_x + x
+        sum_y = sum_y + y
+    if end-start != 0:
+        avg_x = sum_x/(end-start)
+        avg_y = sum_y/(end-start)
+    else:
+        avg_x = np.inf
+        avg_y = np.inf
+    return avg_x,avg_y
+
+
+def get_distance(f1,f2):
+    '''
+    Get the distance between two features on face.
+    INPUT:
+    f1 - position of face feature 1
+    f2 - position of face feature 2
+    OUTPUT:
+    dist - the distance
+    '''
+    x1,y1 = f1
+    x2,y2 = f2
+    return np.sqrt((x1-x2)**2+(y1-y2)**2)
+
+
 def get_cropped_face(face,face_name,img):
     '''
     Get and save the cropped face.
     '''
+    print(face_name)
     y1,y2,x1,x2 = get_face_range(face)
     print(x1,x2,y1,y2)
     face_img = img[x1:x2,y1:y2]
