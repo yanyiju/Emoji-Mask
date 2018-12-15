@@ -3,17 +3,27 @@ import imutils
 import os
 import cv2
 
+emotion_labels = {
+    0: 'angry',
+    1: 'disgust',
+    2: 'fear',
+    3: 'happy',
+    4: 'sad',
+    5: 'surprise',
+    6: 'neutral'
+}
+
 # Folder of stored emoji png
 EMOJI_FILE_PATH = "emoji_png/"
 
 def graft_emoji(photo_path, faces):
 	'''
 	Graft the responding emoji onto the given photo based on face infomation 
-	including face orientation (degree), face radius (ratio), face center, emotion label
+	including face orientation (degree), face range (pixel), face center, emotion label
 	INPUT:
 	photo - the path of target photo 
 	faces - information of faces in the photo 
-			list of list [orientation, radius, center, label]
+			list of list [orientation, range, center, label]
 			(can be optimized into numpy matrix)
 	OUTPUT:
 	result - the processed photo which labeled emojis have been added
@@ -24,11 +34,12 @@ def graft_emoji(photo_path, faces):
 	''' grafting process '''
 	result = photo
 	for face in faces:
+		print(face)
 		emoji = cv2.imread(get_emoji_file(face[3]),cv2.IMREAD_UNCHANGED)
-		rows,cols,rgba =  emoji.shape
+		rows,cols,rgba = emoji.shape
 		''' Get parameters for transforming '''
 		angle = face[0]
-		scale = 2*face[1]/rows
+		scale = 1.25*face[1]/rows
 		''' Transform the emoji '''
 		emoji_trans = rotate_img(emoji,angle)
 		emoji_trans = scale_img(emoji_trans,scale)
@@ -50,14 +61,13 @@ def overlay(photo, emoji, pos):
 	''' Determine overlay range '''
 	height,width = emoji.shape[0:2]
 	(cx, cy) = pos
-	(x1, y1) = (cx-int(height/2),cy-int(width/2))
-	(x2, y2) = (cx+int(height/2),cy+int(width/2))
+	(Y, X) = (cx-int(height/2),cy-int(width/2))
 	''' Overlay '''
-	for i in range(x2-x1+1):
-		for j in range(y2-y1+1):
+	for i in range(height):
+		for j in range(width):
 			''' Judge alpha channel '''
 			if emoji[i,j,3] != 0:
-				result[i,j] = emoji[i,j][0:3]
+				result[i+int(X),j+int(Y)] = emoji[i,j][0:3]
 	return result
 
 def rotate_img(img, angle):
@@ -89,22 +99,7 @@ def get_emoji_file(label):
 	OUTPUT:
 	filename - the corresponding emoji file name/path
 	'''
-	if label is 0:
-		file = EMOJI_FILE_PATH+"neutral.png"
-	elif label is 1:
-		file = EMOJI_FILE_PATH+"angry.png"
-	elif label is 2:
-		file = EMOJI_FILE_PATH+"contempt.png"
-	elif label is 3:
-		file = EMOJI_FILE_PATH+"disgust.png"
-	elif label is 4:
-		file = EMOJI_FILE_PATH+"fear.png"
-	elif label is 5:
-		file = EMOJI_FILE_PATH+"happy.png"
-	elif label is 6:
-		file = EMOJI_FILE_PATH+"sad.png"
-	elif label is 7:
-		file = EMOJI_FILE_PATH+"surprise.png"
+	file = EMOJI_FILE_PATH+emotion_labels[label]+".png"
 	return file
 
 def check(img):

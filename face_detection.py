@@ -1,8 +1,15 @@
+############################################################
+##  
+##  Private package 
+##  Function: Detecting faces and emotions
+##
+############################################################
 import argparse
 import imutils
 import dlib
 import cv2
 import os
+import math
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -12,11 +19,37 @@ from imutils.face_utils import rect_to_bb
 from helpers import FACIAL_LANDMARKS_IDXS
 from helpers import shape_to_np
 from scipy import misc
+from keras.models import load_model
 
-''' <find_face_solution1.py> '''
+CROP_FACES_PATH = "crop_faces/"
+emotion_classifier = load_model('simple_CNN.530-0.65.hdf5')
+emotion_labels = {
+    0: 'angry',
+    1: 'disgust',
+    2: 'fear',
+    3: 'happy',
+    4: 'sad',
+    5: 'surprise',
+    6: 'neutral'
+}
+
+''' emotion detection related '''
+
+def emotion_recognition(img):
+    '''take in already cut face img'''
+    gray_face = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray_face = cv2.resize(gray_face, (48, 48))
+    gray_face = gray_face / 255.0
+    gray_face = np.expand_dims(gray_face, 0)
+    gray_face = np.expand_dims(gray_face, -1)
+    emotion_label_arg = np.argmax(emotion_classifier.predict(gray_face))
+    # emotion = emotion_labels[emotion_label_arg]
+    return emotion_label_arg
+
+''' find_face_solution 1 '''
 
 # Custormized, load preset for detect_cv2
-CASCADE = "haarcascade_frontalface_alt1.xml"
+CASCADE = "haarcascade_frontalface_alt.xml"
 FACE_DETECTION = cv2.CascadeClassifier(CASCADE)
 
 def detect_cv2(path):
@@ -32,7 +65,7 @@ def detect_cv2(path):
     faces[:, 2:] += faces[:, :2]
     return faces, img
 
-def box(faces, img, path):
+def box_cv2(faces, img, path):
     '''
     Mark detected faces and ranges
     '''
@@ -46,9 +79,9 @@ def box(faces, img, path):
         cv2.imwrite('detected_faces/' + base + '_' + str(idx) + '.jpg', sub_img)
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
         idx = idx + 1
-    # cv2.imwrite('detected_cluster.jpg', img)
+    cv2.imwrite('detected_cluster.jpg', img)
 
-''' <find_face_solution2.py> '''
+''' find_face_solution 2 '''
 
 # Custormized, load preset for detect_mtcnn
 minsize = 20                                    # minimum size of face
@@ -90,14 +123,14 @@ def detect_mtcnn(path):
     plt.imshow(img)
     plt.show()
 
-''' <face_align.py> '''
+''' find_face_solution 3 '''
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor and the face aligner
 DLIB_DETECTOR = dlib.get_frontal_face_detector()
 DLIB_PREDICTOR = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
-def detect_dlib(path):
+def detect_dlib(path,name):
     '''
     Face detection using dlib face detector
     INPUT:
@@ -108,8 +141,16 @@ def detect_dlib(path):
     '''
     image = cv2.imread(path)
     image = imutils.resize(image, width=800)
+    cv2.imwrite('resize.png',image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = DLIB_DETECTOR(gray, 2)
+    print(faces)
+    count = 0
+    for face in faces:
+        # Save the cropped face
+        face_name = CROP_FACES_PATH+name+str(count)+'.jpg'
+        get_cropped_face(face,face_name,image)
+        count = count+1
     return gray,faces
 
 def get_face_info(gray,face):
@@ -120,55 +161,154 @@ def get_face_info(gray,face):
     gray - the gray scaled image used for prediction
     face - the given face
     OUTPUT:
-    center - the position/center of the face, set as the middle point between eyes
+    angle - the orientation of the face in 2D 
     radius - the radius of the face range, unit in pixels
-    angle - the orientation of the face in 2D
+    center - the position/center of the face, set as the middle point between eyes
     '''
     # extract the ROI of the *original* face, then align the face
     # using facial landmarks
     shape = DLIB_PREDICTOR(gray, face)
     shape = shape_to_np(shape)
 
-    # extract the left and right eye (x, y)-coordinates
-    (lStart, lEnd) = FACIAL_LANDMARKS_IDXS["left_eye"]
-    (rStart, rEnd) = FACIAL_LANDMARKS_IDXS["right_eye"]
-    leftEyePts = shape[lStart:lEnd]
-    rightEyePts = shape[rStart:rEnd]
-
     # Left eye
-    sum_x_left = 0
-    sum_y_left = 0
-    count = 0
-    for (x, y) in leftEyePts:
-        sum_x_left = sum_x_left + x
-        sum_y_left = sum_y_left + y
-        count = count + 1
-        # cv2.circle(gray,(x,y),1,(0,0,255),-1)
-    avg_x_left = sum_x_left/count
-    avg_y_left = sum_y_left/count
+    avg_x_left,avg_y_left = get_feature_pos("left_eye",shape)
     cv2.circle(gray,(int(avg_x_left),int(avg_y_left)),1,(128,128,128),-1)
-    
+
     # Right eye
-    sum_x_right = 0
-    sum_y_right = 0
-    count = 0
-    for (x, y) in rightEyePts:
-        sum_x_right = sum_x_right + x
-        sum_y_right = sum_y_right + y
-        count = count + 1
-        # cv2.circle(gray, (x, y), 1, (255, 255, 0), -1)
-    avg_x_right = sum_x_right/count
-    avg_y_right = sum_y_right/count
+    avg_x_right,avg_y_right = get_feature_pos("right_eye",shape)
     cv2.circle(gray,(int(avg_x_right),int(avg_y_right)),1,(128,128,128),-1)
 
-    # Calulate center
-    center = (round((avg_x_left+avg_x_right)/2),round((avg_y_left+avg_y_right)/2))
-    # Calculate the radius
-    radius = (face.height()+face.width())/2.0
     # Calculate the angle (2D orientation)
     angle = np.arctan((avg_y_right-avg_y_left)/(avg_x_right-avg_x_left))
-    angle = -angle/np.pi*180
+    angle = angle/np.pi*180
+    # Calculate the radius
+    width = (face.height()+face.width())/2.0
+    # Calulate center
+    center = (int((avg_x_left+avg_x_right)/2),int((avg_y_left+avg_y_right)/2))
 
-    return center,radius,angle
+    return angle,width,center
 
 
+def get_face_features(gray,face):
+    '''
+    Used to judge if two faces are the same person
+    INPUT:
+    gray - the gray scaled image used for prediction
+    face - the given face
+    OUTPUT:
+    features - a vector recording the distances between face features
+    Here I take the person's nose as the reference point, thus in the 
+    following expression dist[<feature>] means the distance between 
+    his/her nose and the feature point.
+
+    The order of features np array:
+        [dist["mouth"], dist["right_eyebrow"], dist["left_eyebrow"], 
+            dist["right_eye"], dist["left_eye"], dist["jaw"]]
+    '''
+    shape = DLIB_PREDICTOR(gray, face)
+    shape = shape_to_np(shape)
+
+    positions = []
+    nose = get_feature_pos("nose",shape)
+    positions.append(get_feature_pos("mouth",shape))
+    positions.append(get_feature_pos("right_eyebrow",shape))
+    positions.append(get_feature_pos("left_eyebrow",shape))
+    positions.append(get_feature_pos("right_eye",shape))
+    positions.append(get_feature_pos("left_eye",shape))
+    positions.append(get_feature_pos("jaw",shape))
+
+    # Get the vector
+    features = np.zeros((1,6))
+    for i in range(6):
+        features[0,i] = get_distance(nose,positions[i])
+    # Normalize
+    features = features/np.sqrt(np.sum(features**2))
+    
+    return features
+
+
+def get_feature_pos(feature,shape):
+    '''
+    Get the average value/pos of the points for the feature
+    INPUT:
+    feature - a string naming the feature, like "mouth"
+    shape - a numpy array including all points
+    OUTPUT:
+    position - the position of the feature
+    '''
+    (start, end) = FACIAL_LANDMARKS_IDXS[feature]
+    point_set = shape[start:end]
+
+    # get the geometry center/average pos value
+    sum_x = 0
+    sum_y = 0
+    for (x, y) in point_set:
+        sum_x = sum_x + x
+        sum_y = sum_y + y
+    if end-start != 0:
+        avg_x = sum_x/(end-start)
+        avg_y = sum_y/(end-start)
+    else:
+        avg_x = np.inf
+        avg_y = np.inf
+    return avg_x,avg_y
+
+
+def get_distance(f1,f2):
+    '''
+    Get the distance between two features on face.
+    INPUT:
+    f1 - position of face feature 1
+    f2 - position of face feature 2
+    OUTPUT:
+    dist - the distance
+    '''
+    x1,y1 = f1
+    x2,y2 = f2
+    return np.sqrt((x1-x2)**2+(y1-y2)**2)
+
+
+def get_cropped_face(face,face_name,img):
+    '''
+    Get and save the cropped face.
+    '''
+    print(face_name)
+    y1,y2,x1,x2 = get_face_range(face)
+    print(x1,x2,y1,y2)
+    face_img = img[x1:x2,y1:y2]
+    plt.imshow(face_img)
+    face_img = cv2.resize(face_img,(96,96),interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(face_name,face_img)
+
+def add_box_text(faces,labels,img):
+    '''
+    Mark detected faces and emotions
+    '''
+    img = imutils.resize(img, width=800)
+    idx = 0
+    for face in faces:
+        x1,x2,y1,y2 = get_face_range(face)
+        # Add face box
+        cv2.rectangle(img,(x1,y1),(x2,y2),(127, 255, 0),2)
+        # Add face emotion text
+        cv2.putText(img,emotion_labels[labels[idx]],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
+        idx = idx+1
+    return img
+
+def get_face_range(face):
+    '''
+    Get the face range from dlib.rectangle object
+    '''
+    l = face.left()
+    r = face.right()
+    t = face.top()
+    b = face.bottom()
+    if l < 0:
+        l = 0
+    if r < 0:
+        r = 0
+    if t < 0:
+        t = 0
+    if b < 0:
+        b = 0     
+    return l,r,t,b
