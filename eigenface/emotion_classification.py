@@ -30,6 +30,9 @@ from skimage import color
 import struct
 import sys
 
+img_row = 50
+img_col = 50
+
 
 def read_expression(expression_path):
     '''Reads the expressions in as an array.
@@ -43,17 +46,26 @@ def read_expression(expression_path):
             (n, 28, 28) numpy array, where n is the number of images.
     '''
     expression_files = os.listdir(expression_path)
-    data_as_array = np.zeros((len(expression_files), 100, 100))
+    data_as_array = np.zeros((len(expression_files), img_row, img_col))
     for i in range(len(expression_files)):
         file_num = int(expression_files[i][0:len(expression_files[i]) - 4])
         img = imageio.imread(expression_path + '/' + expression_files[i])
-        img_resized = cv2.resize(img, (100, 100))
+        img_resized = cv2.resize(img, (img_row, img_col))
         img_resized_grey = color.rgb2gray(img_resized)
         data_as_array[file_num - 1] = img_resized_grey
     return data_as_array
 
 
-'''WRITE ALL FUNCTIONS HERE'''
+def read_expression_idx(expression_idx_path):
+    '''Reads the emotion labels in as an array.'''
+    expression_label_file = os.listdir(expression_idx_path)
+    labels = np.zeros(len(expression_label_file))
+    for i in range(len(expression_idx_path)):
+        file_num = int(expression_label_file[i][0:len(expression_label_file[i]) - 4])
+        f = open(expression_idx_path + '/' + str(file_num) + ".txt", "r")
+        line = f.readline()
+        labels[file_num] = float(line)
+    return labels
 
 
 def get_pca(train_img, pca_dimension):
@@ -67,7 +79,7 @@ def get_pca(train_img, pca_dimension):
     for i in range(pca_dimension):
         pca[:, i] = eigenvectors[:, top_eig_idx[i]]
         # etai.write(255 * pca[:, i].reshape([28, 28]), str(i) + ".png")
-        plt.imsave('out/' + str(i) + ".png", pca[:, i].reshape([28, 28]))
+        plt.imsave('out/' + str(i) + ".png", pca[:, i].reshape([img_row, img_col]))
         # plt.show()
     return pca
 
@@ -103,23 +115,10 @@ def get_response(neighbors, labels):
 def run(expression_path, label_path):
 
     expression_train_images = read_expression(expression_path)
-    # expression_train_labels = read_label(label_path)
-
-    '''CALL YOUR FUNCTIONS HERE.
-
-    Please call of your functions here. For this problem, we ask you to
-    visualize several things. You need to do this yourself (in any
-    way you wish).
-
-    For the MNIST and SVHN error rates, please store these two error
-    rates in the variables called "mnist_error_rate" and
-    "svhn_error_rate", for the MNIST error rate and SVHN error rate,
-    respectively. These two variables will be used to write
-    the numbers in a JSON file.
-    '''
+    expression_train_labels = read_expression_idx(label_path)
 
     # setting parameters
-    pca_dimension = 10
+    pca_dimension = 9
     k_neighbors = 10
     pca_components = get_pca(expression_train_images, pca_dimension)
     flattened_img = np.zeros(
@@ -134,52 +133,31 @@ def run(expression_path, label_path):
                                                 np.transpose(pca_components[:, j])) / np.linalg.norm(
                 pca_components[:, j])
 
-    mnist_error_count = 0
-    mnist_test_num = 500
-    mnist_failed_instances = []
-    mnist_correct_example_saved = False
-    mnist_wrong_example_saved = False
-    for i in range(mnist_test_num):
-        neighbors = get_neighbors(train_img_projection, mnist_test_images[i], k_neighbors, pca_components, mean)
-        response = get_response(neighbors, mnist_train_labels)
-        if response != mnist_test_labels[i]:
-            mnist_error_count += 1
-            mnist_failed_instances.append(i)
-            if not mnist_wrong_example_saved:
-                mnist_wrong_example_saved = True
-                plt.imsave('out/mnist_wrong_response_' + str(response) +
-                           '_correct_' + str(mnist_test_labels[i]) + '.png', mnist_test_images[i])
+    error_count = 0
+    test_num = 500
+    failed_instances = []
+    correct_example_saved = False
+    wrong_example_saved = False
+    for i in range(test_num):
+        neighbors = get_neighbors(train_img_projection, test_images[i], k_neighbors, pca_components, mean)
+        response = get_response(neighbors, train_labels)
+        if response != test_labels[i]:
+            error_count += 1
+            failed_instances.append(i)
+            if not wrong_example_saved:
+                wrong_example_saved = True
+                plt.imsave('out/wrong_response_' + str(response) +
+                           '_correct_' + str(test_labels[i]) + '.png', test_images[i])
         else:
-            if not mnist_correct_example_saved:
-                mnist_correct_example_saved = True
-                plt.imsave('out/mnist_correct_' + str(mnist_test_labels[i]) + '.png', mnist_test_images[i])
-
-    svhn_error_count = 0
-    svhn_digit_count = 0
-    svhn_failed_instances = []
-    for i in range(300):
-        image = etai.read(base_svhn_path + '/' + digits[i]['filename'])
-        image = etai.rgb_to_gray(image)
-        for b in digits[i]['boxes']:
-            svhn_digit_count += 1
-            chopped = image[int(float(b['top'])):int(float(b['top']) + float(b['height'])),
-                      int(float(b['left'])): int(float(b['left']) + float(b['width']))]
-            chopped_resized = etai.resize(chopped, 28, 28)
-            neighbors = get_neighbors(train_img_projection, chopped_resized, k_neighbors, pca_components, mean)
-            response = get_response(neighbors, mnist_train_labels)
-            if response != b['label']:
-                svhn_error_count += 1
-                svhn_failed_instances.append((digits[i]['filename'], b, response))
-    print(svhn_failed_instances[0])
+            if not correct_example_saved:
+                correct_example_saved = True
+                plt.imsave('out/correct_' + str(test_labels[i]) + '.png', test_images[i])
 
 
     # Make sure you assign values to these two variables
-    mnist_error_rate = mnist_error_count / mnist_test_num
-    svhn_error_rate = svhn_error_count / svhn_digit_count
+    error_rate = error_count / test_num
 
     error_rate_dic = defaultdict(lambda: defaultdict())
-    error_rate_dic["error_rates"]["mnist_error_rate"] = mnist_error_rate
-    error_rate_dic["error_rates"]["svhn_error_rate"] = svhn_error_rate
     etas.write_json(error_rate_dic, data.error_rate_file)
 
 
