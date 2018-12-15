@@ -33,16 +33,7 @@ import sys
 img_row = 50
 img_col = 50
 
-emotion_labels = [
-    'NE',
-    'AN',
-    'contempt',
-    'DI',
-    'FE',
-    'HA',
-    'SA',
-    'SU'
-]
+emotion_labels = [ 'NE', 'AN', 'contempt', 'DI', 'FE', 'HA', 'SA', 'SU' ]
 
 
 def read_expression(expression_path):
