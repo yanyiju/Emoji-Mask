@@ -33,6 +33,17 @@ import sys
 img_row = 50
 img_col = 50
 
+emotion_labels = [
+    'NE',
+    'AN',
+    'contempt',
+    'DI',
+    'FE',
+    'HA',
+    'SA',
+    'SU'
+]
+
 
 def read_expression(expression_path):
     '''Reads the expressions in as an array.
@@ -66,7 +77,7 @@ def read_expression_idx(expression_idx_path):
         file_num = int(expression_label_file[i][0:len(expression_label_file[i]) - 4])
         f = open(expression_idx_path + '/' + str(file_num) + ".txt", "r")
         line = f.readline()
-        labels[file_num - 1] = int(float(line)) - 1
+        labels[file_num - 1] = int(float(line))
     return labels
 
 
@@ -135,20 +146,24 @@ def run(expression_path, label_path):
                                                 np.transpose(pca_components[:, j])) / np.linalg.norm(
                 pca_components[:, j])
 
-    test_path = "../face_detection/detected_faces"
+    # test_path = "../face_detection/detected_faces"
+    test_path = "../jaffe"
     test_file = os.listdir(test_path)
     test_data = np.zeros((len(test_file), img_row, img_col))
+    correct_count = 0
+    error_count = 0
     for i in range(len(test_file)):
-        file_num = int(test_file[i][0:len(test_file[i]) - 4])
         img = imageio.imread(test_path + '/' + test_file[i])
         img_resized = cv2.resize(img, (img_row, img_col))
         img_resized_grey = color.rgb2gray(img_resized)
-        test_data[file_num - 1] = img_resized_grey
-
-    for i in range(len(test_data)):
-        neighbors = get_neighbors(train_img_projection, test_data[i], k_neighbors, pca_components, mean)
+        neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
         response = get_response(neighbors, expression_train_labels)
-        print(response)
+        if emotion_labels[response[0]] == test_file[i][3:5]:
+            correct_count += 1
+        else:
+            error_count += 1
+    print(correct_count / (correct_count + error_count))
+
 
 
 if __name__ == "__main__":
