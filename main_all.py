@@ -7,7 +7,8 @@ import face_detection as FACE
 import emoji_cover as GRAFT
 
 def main():
-	img_path = "example3.jpg"
+	# TODO: Choose one example image.
+	img_path = "./album/example3.jpg"
 
 	# Face detection process using cv2 package
 	# faces, img = FACE.detect_cv2(img_path)

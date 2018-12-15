@@ -28,7 +28,9 @@ Emotion detection is based on the eigen faces algorithm.
 During [Face Detection](./face_detection.py), we can get the key points' infomation of landmarks for each face. Based on the left eye and right eye information, we can roughly get the center of a person's face at the middle point between left and right eye and the orientation of the face from the slope of the line from left eye to the right one.
 
 ### Face Recognition (still in elementary stage)
-This part is aimed to recognize one same person's faces across all given pictures given in the *.\album*. Assuming that each face is a 2D plane and has a relatively small angle with the camera projective plane (or the face is very possibly nor detected), which means we can ignore the projective issues, we respectively calculate the distances between nose (face center) and mouth/right_eyebrow/left_eyebrow/right_eye/left_eye/jaw and establish a matrix for each face. The classifying based on the distances between any two faces is an LSQ problem. If the distance between sample face and the unknown face is lower than a threshold, then these two faces can be recognized as one person.
+This part is aimed to recognize one same person's faces across all given pictures given in the *.\album*. Assuming that each face is a 2D plane and has a relatively small angle with the camera projective plane (or the face is very possibly nor detected), which means we can ignore the projective issues, we respectively calculate the distances between nose (face center) and mouth/right_eyebrow/left_eyebrow/right_eye/left_eye/jaw and establish a normalized matrix for each face. The classifying based on the distances between any two faces is an LSQ problem. If the distance between sample face and the unknown face is lower than a threshold, then these two faces can be recognized as one person.
+
+- Note: One defect of this algorithm is that it can't resist a photo which has been stretched, which means the face width/height ratio and the distance matrix must be largely different from the same face in the original photo.
 
 ## System Requirement
 Anaconda3 in ubuntu 18.04
@@ -71,7 +73,7 @@ python3 main_all.py
 ~~~
 
 ### *selective* Mode
-Only those faces recognized as the same person as the sample face will be covered by emojis. All the parameters users can adjust are list in [*selective.json*](./selective.json) for convenience.
+Only those faces recognized as the same person as the sample face will be covered by emojis. All the parameters users can adjust are list in [*parameters.json*](./parameters.json) for convenience.
 ~~~sh
 python3 main_selective.py
 ~~~

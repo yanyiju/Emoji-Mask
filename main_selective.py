@@ -3,6 +3,7 @@ import os
 import shutil
 import cv2
 import glob
+import json
 import imutils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,15 +13,18 @@ import face_detection as FACED
 import face_recognition as FACER
 import emoji_cover as GRAFT
 
-# Parameters
-threshold = 0.01
-sample_num = 8	# first face as sample
-
 # Paths
 ALBUM_PATH = "album/"
 CROP_FACES_PATH = "crop_faces/"
+PARAMETERS_PATH = "./parameters.json"
 
-def main(threshold):
+def main():
+	# Read parameters
+	with open(PARAMETERS_PATH, 'r') as f:
+		parameters = json.load(f)
+		threshold = parameters["threshold"]
+		sample_num = parameters["sample_num"]
+
 	# Clear history results
 	if os.path.exists(CROP_FACES_PATH):
 		shutil.rmtree(CROP_FACES_PATH)
@@ -102,4 +106,4 @@ def mkdir(path):
 
 
 if(__name__=="__main__"):
-    main(threshold)
+    main()
