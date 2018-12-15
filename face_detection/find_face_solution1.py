@@ -22,6 +22,6 @@ def box(rects, img, path):
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 2)
     cv2.imwrite('detected_cluster.jpg', img)
 
-img_name = "mh3.jpg"
+img_name = "example2.jpg"
 rects, img = detect(img_name)
 box(rects, img, img_name)
