@@ -59,12 +59,14 @@ def read_expression(expression_path):
 def read_expression_idx(expression_idx_path):
     '''Reads the emotion labels in as an array.'''
     expression_label_file = os.listdir(expression_idx_path)
-    labels = np.zeros(len(expression_label_file))
-    for i in range(len(expression_idx_path)):
+    labels = []
+    for i in range(len(expression_label_file)):
+        labels.append(0)
+    for i in range(len(expression_label_file)):
         file_num = int(expression_label_file[i][0:len(expression_label_file[i]) - 4])
         f = open(expression_idx_path + '/' + str(file_num) + ".txt", "r")
         line = f.readline()
-        labels[file_num] = float(line)
+        labels[file_num - 1] = int(float(line)) - 1
     return labels
 
 
@@ -133,32 +135,20 @@ def run(expression_path, label_path):
                                                 np.transpose(pca_components[:, j])) / np.linalg.norm(
                 pca_components[:, j])
 
-    error_count = 0
-    test_num = 500
-    failed_instances = []
-    correct_example_saved = False
-    wrong_example_saved = False
-    for i in range(test_num):
-        neighbors = get_neighbors(train_img_projection, test_images[i], k_neighbors, pca_components, mean)
-        response = get_response(neighbors, train_labels)
-        if response != test_labels[i]:
-            error_count += 1
-            failed_instances.append(i)
-            if not wrong_example_saved:
-                wrong_example_saved = True
-                plt.imsave('out/wrong_response_' + str(response) +
-                           '_correct_' + str(test_labels[i]) + '.png', test_images[i])
-        else:
-            if not correct_example_saved:
-                correct_example_saved = True
-                plt.imsave('out/correct_' + str(test_labels[i]) + '.png', test_images[i])
+    test_path = "../face_detection/detected_faces"
+    test_file = os.listdir(test_path)
+    test_data = np.zeros((len(test_file), img_row, img_col))
+    for i in range(len(test_file)):
+        file_num = int(test_file[i][0:len(test_file[i]) - 4])
+        img = imageio.imread(test_path + '/' + test_file[i])
+        img_resized = cv2.resize(img, (img_row, img_col))
+        img_resized_grey = color.rgb2gray(img_resized)
+        test_data[file_num - 1] = img_resized_grey
 
-
-    # Make sure you assign values to these two variables
-    error_rate = error_count / test_num
-
-    error_rate_dic = defaultdict(lambda: defaultdict())
-    etas.write_json(error_rate_dic, data.error_rate_file)
+    for i in range(len(test_data)):
+        neighbors = get_neighbors(train_img_projection, test_data[i], k_neighbors, pca_components, mean)
+        response = get_response(neighbors, expression_train_labels)
+        print(response)
 
 
 if __name__ == "__main__":
