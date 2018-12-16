@@ -33,7 +33,7 @@ import sys
 img_row = 50
 img_col = 50
 
-emotion_labels = [ 'NE', 'AN', 'contempt', 'DI', 'FE', 'HA', 'SA', 'SU' ]
+emotion_labels = ['NE', 'AN', 'DI', 'FE', 'HA', 'SA', 'SU']
 
 
 def read_expression(expression_path):
@@ -113,7 +113,7 @@ def get_response(neighbors, labels):
     for n in neighbors:
         poll[labels[n]] += 1
     response = sorted(range(len(poll)), key=lambda i: poll[i])[-1:]
-    return response
+    return response[0]
 
 
 def run(expression_path, label_path):
@@ -123,7 +123,7 @@ def run(expression_path, label_path):
 
     # setting parameters
     pca_dimension = 9
-    k_neighbors = 10
+    k_neighbors = 8
     pca_components = get_pca(expression_train_images, pca_dimension)
     flattened_img = np.zeros(
         (len(expression_train_images), expression_train_images[0].shape[0] * expression_train_images[0].shape[1]))
@@ -138,26 +138,52 @@ def run(expression_path, label_path):
                 pca_components[:, j])
 
     # test_path = "../face_detection/detected_faces"
-    test_path = "../jaffe"
-    test_file = os.listdir(test_path)
-    test_data = np.zeros((len(test_file), img_row, img_col))
-    correct_count = 0
-    error_count = 0
-    for i in range(len(test_file)):
-        img = imageio.imread(test_path + '/' + test_file[i])
-        img_resized = cv2.resize(img, (img_row, img_col))
-        img_resized_grey = color.rgb2gray(img_resized)
-        neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
-        response = get_response(neighbors, expression_train_labels)
-        if emotion_labels[response[0]] == 'contempt':
-            correct_count += 1
-        elif emotion_labels[response[0]] == test_file[i][3:5]:
-            correct_count += 1
-        else:
-            error_count += 1
-    print(correct_count / (correct_count + error_count))
+    # test_path = "../jaffe_crop"
+    # test_file = os.listdir(test_path)
+    # test_data = np.zeros((len(test_file), img_row, img_col))
+    # correct_count = 0
+    # error_count = 0
+    # for i in range(len(test_file)):
+    #     img = imageio.imread(test_path + '/' + test_file[i])
+    #     img_resized = cv2.resize(img, (img_row, img_col))
+    #     img_resized_grey = color.rgb2gray(img_resized)
+    #     neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
+    #     response = get_response(neighbors, expression_train_labels)
+    #     if emotion_labels[response] == 'contempt':
+    #         correct_count += 1
+    #     elif emotion_labels[response] == test_file[i][3:5]:
+    #         correct_count += 1
+    #     else:
+    #         error_count += 1
+    # print(correct_count / (correct_count + error_count))
 
+    
+def test_one_image(img):
+
+    expression_train_images = read_expression("../expression_set_img_crop")
+    expression_train_labels = read_expression_idx("../expression_set_label")
+
+    # setting parameters
+    pca_dimension = 9
+    k_neighbors = 8
+    pca_components = get_pca(expression_train_images, pca_dimension)
+    flattened_img = np.zeros(
+        (len(expression_train_images), expression_train_images[0].shape[0] * expression_train_images[0].shape[1]))
+    for i in range(len(expression_train_images)):
+        flattened_img[i] = expression_train_images[i].flatten()
+    mean = np.mean(flattened_img, axis=0)
+    train_img_projection = np.zeros((len(expression_train_images), pca_dimension))
+    for i in range(len(expression_train_images)):
+        for j in range(pca_dimension):
+            train_img_projection[i, j] = np.dot(expression_train_images[i].flatten() - mean,
+                                                np.transpose(pca_components[:, j])) / np.linalg.norm(
+                pca_components[:, j])
+    img_resized = cv2.resize(img, (img_row, img_col))
+    img_resized_grey = color.rgb2gray(img_resized)
+    neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
+    response = get_response(neighbors, expression_train_labels)
+    return response
 
 
 if __name__ == "__main__":
-    run("../expression_set_img", "../expression_set_label")
+    run("../expression_set_img_crop", "../expression_set_label")
