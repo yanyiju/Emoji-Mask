@@ -1,25 +1,9 @@
-#!/usr/bin/env python
-'''
-A module for classifying the SVHN (Street View House Number) dataset
-using an eigenbasis.
-
-Info:
-    type: eta.core.types.Module
-    version: 0.1.0
-'''
-# pragma pylint: disable=redefined-builtin
-# pragma pylint: disable=unused-wildcard-import
-# pragma pylint: disable=wildcard-import
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-from builtins import *
-from collections import defaultdict
-# pragma pylint: enable=redefined-builtin
-# pragma pylint: enable=unused-wildcard-import
-# pragma pylint: enable=wildcard-import
-
+############################################################
+##  
+##  Private package 
+##  Function: Detecting emotion (Eigenface/CNN)
+##
+############################################################
 import cv2
 import gzip
 import matplotlib.pyplot as plt
@@ -29,11 +13,24 @@ import os
 from skimage import color
 import struct
 import sys
+from keras.models import load_model
+
+''' emotion detection (using eigenface) related '''
 
 img_row = 50
 img_col = 50
 
 emotion_labels = ['NE', 'AN', 'DI', 'FE', 'HA', 'SA', 'SU']
+emotion_labels_eigen = {
+    0: 'neutral',
+    1: 'angry',
+    2: 'contempt',
+    3: 'disgust',
+    4: 'fear',
+    5: 'happy',
+    6: 'sad',
+    7: 'surprise'
+}
 
 
 def read_expression(expression_path):
@@ -73,6 +70,7 @@ def read_expression_idx(expression_idx_path):
 
 
 def get_pca(train_img, pca_dimension):
+    ''' Get PCA '''
     flattened_img = np.zeros((train_img.shape[1] * train_img.shape[2], train_img.shape[0]))
     for i in range(len(train_img)):
         flattened_img[:, i] = np.transpose(train_img[i].flatten())
@@ -89,10 +87,12 @@ def get_pca(train_img, pca_dimension):
 
 
 def get_item(item):
+    ''' helper function '''
     return item[1]
 
 
 def get_neighbors(train, test_instance, num, pca_components, mean):
+    ''' Get neighbors '''
     distance = []
     neighbors = []
     test_projection = np.zeros(pca_components.shape[1])
@@ -109,6 +109,7 @@ def get_neighbors(train, test_instance, num, pca_components, mean):
 
 
 def get_response(neighbors, labels):
+    ''' Get response '''
     poll = np.zeros(10)
     for n in neighbors:
         poll[labels[n]] += 1
@@ -117,7 +118,7 @@ def get_response(neighbors, labels):
 
 
 def run(expression_path, label_path):
-
+    ''' For eigenface algorithm test, used when simply run emotion detection '''
     expression_train_images = read_expression(expression_path)
     expression_train_labels = read_expression_idx(label_path)
 
@@ -137,31 +138,31 @@ def run(expression_path, label_path):
                                                 np.transpose(pca_components[:, j])) / np.linalg.norm(
                 pca_components[:, j])
 
-    # test_path = "../face_detection/detected_faces"
-    # test_path = "../jaffe_crop"
-    # test_file = os.listdir(test_path)
-    # test_data = np.zeros((len(test_file), img_row, img_col))
-    # correct_count = 0
-    # error_count = 0
-    # for i in range(len(test_file)):
-    #     img = imageio.imread(test_path + '/' + test_file[i])
-    #     img_resized = cv2.resize(img, (img_row, img_col))
-    #     img_resized_grey = color.rgb2gray(img_resized)
-    #     neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
-    #     response = get_response(neighbors, expression_train_labels)
-    #     if emotion_labels[response] == 'contempt':
-    #         correct_count += 1
-    #     elif emotion_labels[response] == test_file[i][3:5]:
-    #         correct_count += 1
-    #     else:
-    #         error_count += 1
-    # print(correct_count / (correct_count + error_count))
+    test_path = "face_detection/detected_faces"
+    test_path = "jaffe_crop"
+    test_file = os.listdir(test_path)
+    test_data = np.zeros((len(test_file), img_row, img_col))
+    correct_count = 0
+    error_count = 0
+    for i in range(len(test_file)):
+        img = imageio.imread(test_path + '/' + test_file[i])
+        img_resized = cv2.resize(img, (img_row, img_col))
+        img_resized_grey = color.rgb2gray(img_resized)
+        neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
+        response = get_response(neighbors, expression_train_labels)
+        if emotion_labels[response] == 'contempt':
+            correct_count += 1
+        elif emotion_labels[response] == test_file[i][3:5]:
+            correct_count += 1
+        else:
+            error_count += 1
+    print(correct_count / (correct_count + error_count))
 
     
-def test_one_image(img):
-
-    expression_train_images = read_expression("../expression_set_img_crop")
-    expression_train_labels = read_expression_idx("../expression_set_label")
+def emotion_recognition_EIGEN(img):
+    ''' Eigenface mothod, img is cropped face image '''
+    expression_train_images = read_expression("./expression_set_img_crop")
+    expression_train_labels = read_expression_idx("./expression_set_label")
 
     # setting parameters
     pca_dimension = 9
@@ -184,6 +185,34 @@ def test_one_image(img):
     response = get_response(neighbors, expression_train_labels)
     return response
 
+def get_emotion_name(num):
+    ''' Get the name of the emotion '''
+    return emotion_labels_eigen[num]
 
 if __name__ == "__main__":
-    run("../expression_set_img_crop", "../expression_set_label")
+    run("./expression_set_img_crop", "./expression_set_label")
+
+
+''' emotion detection (using CNN tensorflow) related '''
+
+emotion_classifier = load_model('simple_CNN.530-0.65.hdf5')
+emotion_labels_cnn = {
+    0: 'angry',
+    1: 'disgust',
+    2: 'fear',
+    3: 'happy',
+    4: 'sad',
+    5: 'surprise',
+    6: 'neutral'
+}
+
+def emotion_recognition_CNN(img):
+    ''' take in already cut face img '''
+    gray_face = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray_face = cv2.resize(gray_face, (48, 48))
+    gray_face = gray_face / 255.0
+    gray_face = np.expand_dims(gray_face, 0)
+    gray_face = np.expand_dims(gray_face, -1)
+    emotion_label_arg = np.argmax(emotion_classifier.predict(gray_face))
+    emotion = emotion_labels_cnn[emotion_label_arg]
+    return emotion

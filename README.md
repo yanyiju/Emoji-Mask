@@ -25,6 +25,7 @@ Emotion detection is based on the eigen faces algorithm.
 6 = sadness
 7 = surprise
 ~~~
++ Note: Another optional method of CNN is also enclosed. if CNN: *emotion_detect_method* = 0, else: *emotion_detect_method* = 1.
 
 ### Emoji Grafting
 During [Face Detection](./face_detection.py), we can get the key points' infomation of landmarks for each face. Based on the left eye and right eye information, we can roughly get the center of a person's face at the middle point between left and right eye and the orientation of the face from the slope of the line from left eye to the right one.

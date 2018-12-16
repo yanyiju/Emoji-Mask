@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 # Private packages
 import face_detection as FACED
 import face_recognition as FACER
+import emotion_classification as EMOTION
 import emoji_cover as GRAFT
 
 # Paths
@@ -24,6 +25,7 @@ def main():
 		parameters = json.load(f)
 		threshold = parameters["threshold"]
 		sample_num = parameters["sample_num"]
+		method = parameters["emotion_detect_method"]
 
 	# Clear history results
 	if os.path.exists(CROP_FACES_PATH):
@@ -65,7 +67,7 @@ def main():
 			photo = imutils.resize(photo, width=800)
 			cv2.imwrite('resize.png',photo)
 			gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-			faces_info = get_faces_info(faces,face_map[photo_name],faces_id,gray,photo_name)
+			faces_info = get_faces_info(faces,face_map[photo_name],faces_id,gray,photo_name,method)
 			img_path = 'resize.png'
 			result = GRAFT.graft_emoji(img_path,faces_info)
 			cv2.imwrite('result'+photo_name+'.png',result)
@@ -73,7 +75,7 @@ def main():
 			plt.show()
 
 
-def get_faces_info(faces,face_map,faces_id,gray,photo_name):
+def get_faces_info(faces,face_map,faces_id,gray,photo_name,method):
 	'''
 	Get the face_info of those special faces
 	'''
@@ -88,7 +90,13 @@ def get_faces_info(faces,face_map,faces_id,gray,photo_name):
 		face_info[0:2] = (FACED.get_face_info(gray,face))
 		face_path = CROP_FACES_PATH+photo_name+'/'+str(count)+'.jpg'
 		face_img = cv2.imread(face_path)
-		label = FACED.emotion_recognition(face_img)
+		if method == 0:
+			# method 0 - CNN
+			label = EMOTION.emotion_recognition_CNN(face_img)
+		else:
+			# method 1 - Eigenface
+			label_num = EMOTION.emotion_recognition_EIGEN(face_img)
+			label = EMOTION.get_emotion_name(label_num)
 		labels.append(label)
 		face_info.append(label)
 		count = count+1

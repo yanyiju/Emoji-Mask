@@ -18,6 +18,10 @@ img_row = 50
 img_col = 50
 
 def main():
+	'''
+	This file is used to transform/adjust the training image for emotion
+	detection in order to get a better performance in eigenface algorithm.
+	'''
 	expression_files = os.listdir(expression_path)
 	data_as_array = np.zeros((len(expression_files), img_row, img_col))
 	for i in range(len(expression_files)):

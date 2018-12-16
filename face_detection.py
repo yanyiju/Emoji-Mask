@@ -1,7 +1,7 @@
 ############################################################
 ##  
 ##  Private package 
-##  Function: Detecting faces and emotions
+##  Function: Detecting faces
 ##
 ############################################################
 import argparse
@@ -19,32 +19,8 @@ from imutils.face_utils import rect_to_bb
 from helpers import FACIAL_LANDMARKS_IDXS
 from helpers import shape_to_np
 from scipy import misc
-from keras.models import load_model
 
 CROP_FACES_PATH = "crop_faces/"
-emotion_classifier = load_model('simple_CNN.530-0.65.hdf5')
-emotion_labels = {
-    0: 'angry',
-    1: 'disgust',
-    2: 'fear',
-    3: 'happy',
-    4: 'sad',
-    5: 'surprise',
-    6: 'neutral'
-}
-
-''' emotion detection related '''
-
-def emotion_recognition(img):
-    '''take in already cut face img'''
-    gray_face = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray_face = cv2.resize(gray_face, (48, 48))
-    gray_face = gray_face / 255.0
-    gray_face = np.expand_dims(gray_face, 0)
-    gray_face = np.expand_dims(gray_face, -1)
-    emotion_label_arg = np.argmax(emotion_classifier.predict(gray_face))
-    # emotion = emotion_labels[emotion_label_arg]
-    return emotion_label_arg
 
 ''' find_face_solution 1 '''
 
@@ -291,7 +267,7 @@ def add_box_text(faces,labels,img):
         # Add face box
         cv2.rectangle(img,(x1,y1),(x2,y2),(127, 255, 0),2)
         # Add face emotion text
-        cv2.putText(img,emotion_labels[labels[idx]],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
+        cv2.putText(img,labels[idx],(x1,y1-15),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0))
         idx = idx+1
     return img
 

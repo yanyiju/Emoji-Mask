@@ -3,16 +3,6 @@ import imutils
 import os
 import cv2
 
-emotion_labels = {
-    0: 'angry',
-    1: 'disgust',
-    2: 'fear',
-    3: 'happy',
-    4: 'sad',
-    5: 'surprise',
-    6: 'neutral'
-}
-
 # Folder of stored emoji png
 EMOJI_FILE_PATH = "emoji_png/"
 
@@ -99,7 +89,7 @@ def get_emoji_file(label):
 	OUTPUT:
 	filename - the corresponding emoji file name/path
 	'''
-	file = EMOJI_FILE_PATH+emotion_labels[label]+".png"
+	file = EMOJI_FILE_PATH+label+".png"
 	return file
 
 def check(img):

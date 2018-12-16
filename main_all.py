@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 # Private packages
 import face_detection as FACE
+import emotion_classification as EMOTION
 import emoji_cover as GRAFT
 
 def main():
@@ -30,7 +31,11 @@ def main():
 		face_info[0:2] = (FACE.get_face_info(gray,face))
 		face_path = 'crop_faces/'+str(count)+'.jpg'
 		face_img = cv2.imread(face_path)
-		label = FACE.emotion_recognition(face_img)
+		# method 0 - CNN
+		label = EMOTION.emotion_recognition_CNN(face_img)
+		# method 1 - Eigenface
+		# label_num = EMOTION.emotion_recognition_EIGEN(face_img)
+		# label = EMOTION.get_emotion_name(label_num)
 		labels.append(label)
 		face_info.append(label)
 		count = count+1
