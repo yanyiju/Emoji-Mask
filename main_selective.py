@@ -72,6 +72,7 @@ def main():
 			plt.imshow(result)
 			plt.show()
 
+
 def get_faces_info(faces,face_map,faces_id,gray,photo_name):
 	'''
 	Get the face_info of those special faces
@@ -93,6 +94,7 @@ def get_faces_info(faces,face_map,faces_id,gray,photo_name):
 		count = count+1
 		faces_info.append(face_info)
 	return faces_info
+
 
 def mkdir(path):
 	'''

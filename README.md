@@ -10,6 +10,8 @@ This project aims to cover emoji (or any specific mask) to people’s faces in a
 ### Face Detection
 Since the related knowledge is not fully covered in classes, this part is finally realized through package dlib based on the referenced training model of tensorflow. (find face solution 3 is applied here: detect_dlib())
 
++ Note: *helpers.py* is referenced from [Github](https://github.com/jrosebr1/imutils/blob/master/imutils/face_utils/helpers.py)
+
 ### Emotion Detection
 Emotion detection is based on the eigen faces algorithm.
 #### Expression Labels
