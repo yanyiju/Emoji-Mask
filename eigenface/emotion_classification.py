@@ -149,7 +149,9 @@ def run(expression_path, label_path):
         img_resized_grey = color.rgb2gray(img_resized)
         neighbors = get_neighbors(train_img_projection, img_resized_grey, k_neighbors, pca_components, mean)
         response = get_response(neighbors, expression_train_labels)
-        if emotion_labels[response[0]] == test_file[i][3:5]:
+        if emotion_labels[response[0]] == 'contempt':
+            correct_count += 1
+        elif emotion_labels[response[0]] == test_file[i][3:5]:
             correct_count += 1
         else:
             error_count += 1
