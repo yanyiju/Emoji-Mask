@@ -68,6 +68,7 @@ def main():
 			faces_info = get_faces_info(faces,face_map[photo_name],faces_id,gray,photo_name)
 			img_path = 'resize.png'
 			result = GRAFT.graft_emoji(img_path,faces_info)
+			cv2.imwrite('result'+photo_name+'.png',result)
 			plt.imshow(result)
 			plt.show()
 
